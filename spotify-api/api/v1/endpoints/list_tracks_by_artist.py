@@ -5,40 +5,18 @@ from core.spotify_client import SpotifyClient, get_spotify_client
 router = APIRouter()
 
 @router.post("/", summary="")
-def list_tracks_by_artist(
+async def list_tracks_by_artist(
     artist_name: str,
     spotifyClient: SpotifyClient = Depends(get_spotify_client)
 ):
-    access_token = spotifyClient.get_token()
-
-    response = requests.post(
-        url=f"https://api.spotify.com/v1/search?q={artist_name}&type=artist&limit=1",
-        headers={
-            "Authorization": f"Bearer {access_token}",
-        }
-    )
-
-    if (not response["ok"]):
-        raise ValueError(f"Failed to search artist: {response['statusText']}")
-
-    data = response.json()
+    data = spotifyClient.get(endpoint=f"v1/search?q={artist_name}&type=artist&limit=1")
 
     if (not data["artists"]["items"] or len(data["artists"]["items"]) == 0):
         raise ValueError(f"Artist '{artist_name}' not found")
 
     artist = data["artists"]["items"][0]
-
-    response = requests.post(
-        url=f"https://api.spotify.com/v1/artists/{artist.id}/top-tracks?market=US",
-        headers={
-            "Authorization": f"Bearer {access_token}",
-        }
-    )
-
-    if (not response["ok"]):
-        raise ValueError(f"Failed to get top tracks: {response['statusT ext']}")
     
-    top_tracks_data = response.json()
+    top_tracks_data = spotifyClient.get(endpoint=f"v1/artists/{artist['id']}/top-tracks?market=US")
 
     return {
         "artist": {

@@ -2,6 +2,7 @@ import os
 import requests
 import time
 from typing import Optional
+from fastapi import HTTPException
 
 class SpotifyClient():
 
@@ -43,6 +44,21 @@ class SpotifyClient():
             self.expire = time.time() + int(data["expires_in"]) - 30 # Get a 30 seconds threshold on expiration time
 
         return self.token
+    
+    def get(self, endpoint: str, params: Optional[dict] = None) -> dict:
+        token = self.get_token()
+        url = f"https://api.spotify.com/{endpoint}"
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            raise HTTPException(
+                status_code=response.status_code if hasattr(response, 'status_code') else 500,
+                detail=f"Erreur lors de l'appel à l'API Spotify: {str(e)}"
+            )        
 
 
 _spotify_client: Optional[SpotifyClient] = None
