@@ -1,6 +1,5 @@
-import requests
 from fastapi import APIRouter, Depends
-from core.spotify_client import SpotifyClient, get_spotify_client
+from app.core.spotify_client import SpotifyClient, get_spotify_client
 
 router = APIRouter()
 
