@@ -1,0 +1,11 @@
+services:
+  spotify-api:
+    image: spotify-api:latest
+    container_name: spotify-api-run-1
+    build:
+      context: ./spotify-api
+      dockerfile: Dockerfile.prod
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./spotify-api/app/.env

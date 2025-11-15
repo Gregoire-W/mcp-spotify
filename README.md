@@ -116,23 +116,31 @@ Interactive documentation: **http://localhost:8000/docs**
 
 ---
 
-### Docker Installation
+### Docker Installation (Recommended)
+
+The project uses Docker Compose to orchestrate all services. From the **root directory**:
 
 ```bash
-# Build the Docker image
-cd spotify-api
-docker build -t spotify-api:latest -f Dockerfile.prod .
+# Build and start all services
+docker-compose up
 
-# Run the container
-docker run --name spotify-api-run-1 \
-  -p 8000:8000 \
-  --env-file ./app/.env \
-  spotify-api:latest
+# Or in detached mode (background)
+docker-compose up -d
 
-# Stop and remove the container
-docker stop spotify-api-run-1
-docker rm spotify-api-run-1
+# Rebuild and start (after code changes)
+docker-compose up --build
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
 ```
+
+The API will be accessible at: **http://localhost:8000**  
+Interactive documentation: **http://localhost:8000/docs**
+
+**Note**: Make sure you have created the `.env` file in `spotify-api/app/.env` with your Spotify credentials before running Docker Compose.
 
 ---
 
@@ -141,8 +149,6 @@ docker rm spotify-api-run-1
 | Method | Endpoint | Description |
 |---------|----------|-------------|
 | `GET` | `/docs` | Interactive Swagger documentation |
-| `GET` | `/v1/spotify/tracks/{track_id}` | Get track information |
-| `GET` | `/v1/spotify/tracks?q=query` | Search for tracks |
 | `POST` | `/v1/spotify/` | List top tracks by artist |
 
 ---
