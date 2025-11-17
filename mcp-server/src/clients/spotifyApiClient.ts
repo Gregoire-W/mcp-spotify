@@ -1,4 +1,4 @@
-const BASE_URL = process.env.SPOTIFY_API_URL || "http://localhost:8000";
+const BASE_URL = process.env.SPOTIFY_API_URL;
 
 export async function listTracksByArtist(artistName: string) {
 

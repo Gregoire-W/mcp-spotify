@@ -1,10 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import express, { type Request, type Response } from 'express';
-import cors from 'cors';
 import { z } from "zod";
 import { listTracksByArtist } from "./clients/spotifyApiClient.js";
-import { response } from "express";
 
 const app = express();
 app.use(express.json());
