@@ -9,3 +9,14 @@ services:
       - "8000:8000"
     env_file:
       - ./spotify-api/app/.env
+
+  mcp-server:
+    image: mcp-server:latest
+    container_name: mcp-server-run-1
+    build: 
+      context: ./mcp-server
+      dockerfile: Dockerfile.prod
+    ports:
+      - "3000:3000"
+    environment:
+      - SPOTIFY_API_URL=http://spotify-api:8000
