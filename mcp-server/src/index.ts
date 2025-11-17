@@ -1,63 +1,74 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import express from 'express';
+import express, { type Request, type Response } from 'express';
+import cors from 'cors';
 import { z } from "zod";
 import { listTracksByArtist } from "./clients/spotifyApiClient.js";
+import { response } from "express";
 
 const app = express();
 app.use(express.json());
 
-// Create server instance
-const server = new McpServer({
-    name: "spotify",
-    version: "1.0.0",
-});
+function getServer() {
 
-server.registerTool(
-    "add",
-    {
-        title: "Best tracks tools",
-        description: "List top tracks from a spotify artist",
-        inputSchema: { artistName: z.string() },
-        outputSchema: {
-            artist: z.object({
-                id: z.string(),
-                name: z.string(),
-                image: z.string(),
-                followers: z.number(),
-                genres: z.array(z.string())
-            }),
-            tracks: z.array(
-                z.object({
+    // Create server instance
+    const server = new McpServer({
+        name: "spotify",
+        version: "1.0.0",
+    });
+
+    server.registerTool(
+        "add",
+        {
+            title: "Best tracks tools",
+            description: "List top tracks from a spotify artist",
+            inputSchema: { artistName: z.string() },
+            outputSchema: {
+                artist: z.object({
                     id: z.string(),
                     name: z.string(),
-                    album: z.string(),
-                    albumImage: z.string(),
-                    duration: z.number(),
-                    popularity: z.number(),
-                    previewUrl: z.string().nullable(),  // Peut être null
-                    spotifyUrl: z.string()
-                })
-            )
+                    image: z.string(),
+                    followers: z.number(),
+                    genres: z.array(z.string())
+                }),
+                tracks: z.array(
+                    z.object({
+                        id: z.string(),
+                        name: z.string(),
+                        album: z.string(),
+                        albumImage: z.string(),
+                        duration: z.number(),
+                        popularity: z.number(),
+                        previewUrl: z.string().nullable(),  // Peut être null
+                        spotifyUrl: z.string()
+                    })
+                )
+            }
+        },
+        async ({ artistName }) => {
+            const response = await listTracksByArtist(artistName)
+            return {
+                content: [{ type: 'text', text: JSON.stringify(response) }],
+                structuredContent: response
+            };
         }
-    },
-    async ({ artistName }) => {
-        const response = await listTracksByArtist(artistName)
-        return response
-    }
-)
 
-app.post('/mcp', async (req, res) => {
+    )
+    return server;
+}
+
+app.post('/mcp', async (req: Request, res: Response) => {
     try {
+        const server = getServer();
+
         const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: undefined,
-            enableJsonResponse: true,
-            enableDnsRebindingProtection: true,
-            allowedHosts: ['127.0.0.1',],
         });
 
         res.on('close', () => {
+            console.log("Request close");
             transport.close();
+            server.close();
         });
 
         await server.connect(transport);
