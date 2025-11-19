@@ -1,196 +1,175 @@
-# 🎵 MCP Spotify
+# 🎵 Spotify MCP Server
 
-> A complete project to learn how to build a Model Context Protocol (MCP) server from scratch, using the Spotify API as a practical use case.
+A Model Context Protocol (MCP) implementation for Spotify, built from scratch to demonstrate how MCP servers work in practice. Create playlists, search for music, and explore Spotify's features through a standardized AI integration layer.
 
----
+> **Learning Project**: This project was created to understand MCP internals by building a real-world implementation with Spotify integration.
 
-## 📋 Table of Contents
+## 📺 Demo
 
-- [Introduction](#-introduction)
-- [Project Architecture](#️-project-architecture)
-- [Installation](#-installation)
-  - [1. Spotify API (FastAPI)](#1-spotify-api-fastapi)
-  - [2. MCP Server](#2-mcp-server)
-  - [3. MCP Client](#3-mcp-client)
-- [Usage](#-usage)
-- [Documentation](#-documentation)
-- [Contributing](#-contributing)
+_[Demo video/screenshot coming soon]_
 
----
+## 🤔 What is MCP?
 
-## 🎯 Introduction
+The **Model Context Protocol (MCP)** is an open standard that enables AI models to securely interact with external tools and data sources. Think of it as a universal adapter that lets AI assistants (like Claude, ChatGPT, or Gemini) use your applications and services.
 
-This project is a **hands-on tutorial** to understand and implement the **Model Context Protocol (MCP)** by building a complete application around the Spotify API.
-
-### What is MCP?
-
-The Model Context Protocol is a standardized protocol that enables language models (LLMs) to interact with external data sources in a structured and secure manner.
-
-### Project Goals
-
-1. **Learn MCP**: Understand the protocol by building a server from scratch
-2. **REST API**: Create a FastAPI gateway to Spotify
-3. **Complete Architecture**: Implement the MCP client-server pattern
-4. **Real Use Case**: Query and manipulate Spotify data through LLMs
-
-### Tech Stack
-
-- **API**: FastAPI + Python 3.9+
-- **MCP Server**: Python (coming soon)
-- **MCP Client**: Python (coming soon)
-- **External API**: Spotify Web API
-- **Containerization**: Docker
-
----
-
-## 🏗️ Project Architecture
+### How it works
 
 ```
-mcp-spotify/
-├── spotify-api/       # FastAPI REST API (gateway to Spotify)
-├── mcp-server/        # MCP Server (protocol implementation)
-├── mcp-client/        # MCP Client (server usage)
-└── README.md          # This file
+┌─────────────┐         ┌─────────────┐         ┌──────────────┐
+│             │  MCP    │             │  HTTP   │              │
+│  AI Model   │ ◄─────► │ MCP Server  │ ◄─────► │ Spotify API  │
+│  (Client)   │         │ (TypeScript)│         │   (Python)   │
+│             │         │             │         │              │
+└─────────────┘         └─────────────┘         └──────────────┘
 ```
 
-### Data Flow
+1. **AI Model** sends requests to the MCP Server using the MCP protocol
+2. **MCP Server** processes requests and communicates with the Spotify API wrapper
+3. **Spotify API** handles authentication and interactions with Spotify's services
+4. Results flow back through the chain to the AI model
+
+## 🏗️ Architecture
+
+This project consists of three main components running in Docker containers:
+
+### 🐍 Spotify API (`spotify-api/`)
+A FastAPI wrapper around Spotify's Web API that handles:
+- OAuth authentication with Spotify
+- Rate limiting and error handling
+- Clean REST endpoints for the MCP server
+
+### 🔧 MCP Server (`mcp-server/`)
+A TypeScript implementation of the MCP protocol that:
+- Exposes Spotify features as MCP tools
+- Translates between MCP protocol and HTTP requests
+- Manages sessions and handles CORS for browser-based clients
+
+### 🤖 MCP Client (`mcp-client/`)
+A Python client demonstrating MCP usage:
+- Connects to the MCP server via HTTP
+- Lists available tools
+- Executes tool calls and displays results
+
+### Communication Flow
 
 ```
-┌─────────────┐       ┌─────────────┐       ┌──────────────┐       ┌──────────────┐
-│  MCP Client │ ◄───► │  MCP Server │ ◄───► │  Spotify API │ ◄───► │  Spotify Web │
-│   (User)    │       │  (Protocol) │       │   (FastAPI)  │       │     API      │
-└─────────────┘       └─────────────┘       └──────────────┘       └──────────────┘
+MCP Client ──[MCP Protocol]──► MCP Server ──[HTTP]──► Spotify API ──[OAuth]──► Spotify
 ```
-
----
 
 ## 🚀 Installation
 
 ### Prerequisites
 
-- Python 3.9 or higher
-- Docker (optional, for containerization)
-- A Spotify Developer account ([create an account](https://developer.spotify.com/dashboard))
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+- A Spotify Developer account
+- An AI API key (Google AI, OpenAI, or Anthropic)
 
-### Spotify Configuration
+### 1. Spotify Developer Setup
 
-1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Create a new application
-3. Get your `Client ID` and `Client Secret`
+1. Go to [Spotify for Developers](https://developer.spotify.com/dashboard)
+2. Create a new app
+3. Note your **Client ID** and **Client Secret**
+4. Add `http://localhost:8000/callback` to your app's Redirect URIs
 
----
+### 2. AI API Key
 
-## 1. Spotify API (FastAPI)
+Choose one of the following providers:
 
-The FastAPI API serves as a gateway between the MCP server and the Spotify API. It handles authentication and exposes REST endpoints.
+- **Google AI Studio** (Free): [Get API Key](https://aistudio.google.com/app/apikey)
+- **OpenAI**: [Get API Key](https://platform.openai.com/api-keys)
+- **Anthropic**: [Get API Key](https://console.anthropic.com/)
 
-### Local Installation
+### 3. Environment Configuration
 
-```bash
-# Navigate to the spotify-api folder
-cd spotify-api
+Create two environment files in the project root:
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Create the .env file
-# Copy the content below and replace with your credentials
-```
-
-**File `spotify-api/app/.env`:**
-
+#### `spotify-api/app/.env`
 ```env
-SPOTIFY_CLIENT_ID=your_client_id
-SPOTIFY_CLIENT_SECRET=your_client_secret
+SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+SPOTIFY_REDIRECT_URI=http://localhost:8000/callback
 ```
 
-### Local Launch
+#### `mcp-client/.env` (optional, for AI integration)
+```env
+# Choose one provider
+GOOGLE_AI_API_KEY=your_google_api_key
+# OPENAI_API_KEY=your_openai_api_key
+# ANTHROPIC_API_KEY=your_anthropic_api_key
+```
+
+## 🎮 Usage
+
+### Start the Project
 
 ```bash
-# From the spotify-api folder
-uvicorn app.main:app --reload --port 8000
+# Clone the repository
+git clone https://github.com/Gregoire-W/mcp-spotify.git
+cd mcp-spotify
+
+# Start all services
+docker compose up --build
 ```
 
-The API will be accessible at: **http://localhost:8000**  
-Interactive documentation: **http://localhost:8000/docs**
+That's it! The services will be available at:
+- **Spotify API**: http://localhost:8000
+- **MCP Server**: http://localhost:3000/mcp
+- **MCP Client**: Runs once and exits (check logs with `docker compose logs mcp-client`)
 
----
+### Test with MCP Inspector
 
-### Docker Installation (Recommended)
-
-The project uses Docker Compose to orchestrate all services. From the **root directory**:
+You can also test the server using the official MCP Inspector:
 
 ```bash
-# Build and start all services
-docker-compose up
-
-# Or in detached mode (background)
-docker-compose up -d
-
-# Rebuild and start (after code changes)
-docker-compose up --build
-
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
+npx @modelcontextprotocol/inspector http://localhost:3000/mcp
 ```
 
-The API will be accessible at: **http://localhost:8000**  
-Interactive documentation: **http://localhost:8000/docs**
+### Stop the Project
 
-**Note**: Make sure you have created the `.env` file in `spotify-api/app/.env` with your Spotify credentials before running Docker Compose.
+```bash
+docker compose down
+```
 
----
+## 🛠️ Technology Stack
 
-### Available Endpoints
+- **MCP Server**: TypeScript, Express, [@modelcontextprotocol/sdk](https://www.npmjs.com/package/@modelcontextprotocol/sdk)
+- **Spotify API**: Python, FastAPI, [Spotipy](https://spotipy.readthedocs.io/)
+- **MCP Client**: Python, [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
+- **Containerization**: Docker, Docker Compose
 
-| Method | Endpoint | Description |
-|---------|----------|-------------|
-| `GET` | `/docs` | Interactive Swagger documentation |
-| `POST` | `/v1/spotify/` | List top tracks by artist |
+## 📚 Documentation & Resources
 
----
-
-## 2. MCP Server
-
-🚧 **Under Development**
-
-The MCP server will implement the Model Context Protocol to expose Spotify functionalities to LLMs.
-
----
-
-## 3. MCP Client
-
-🚧 **Under Development**
-
-The MCP client will allow interaction with the server through natural language commands.
-
----
-
-## 📚 Documentation
-
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+### Official Documentation
+- [Model Context Protocol Specification](https://modelcontextprotocol.io/)
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+- [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
 - [Spotify Web API](https://developer.spotify.com/documentation/web-api)
-- [Model Context Protocol](https://modelcontextprotocol.io/)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
 
----
+### Learning Resources
+- [Anthropic's MCP Announcement](https://www.anthropic.com/news/model-context-protocol)
+- [Building MCP Servers - A Guide](https://modelcontextprotocol.io/docs/building-servers)
 
 ## 🤝 Contributing
 
-This project is a learning exercise. Feel free to:
+This is a learning project, but contributions are welcome! Feel free to:
 
-- Report bugs
-- Suggest improvements
-- Add features
-
----
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📝 License
 
-Educational project - Free to use
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Anthropic](https://www.anthropic.com/) for creating the Model Context Protocol
+- [Spotify](https://www.spotify.com/) for their comprehensive Web API
+- The open-source community for the amazing tools and libraries
 
 ---
 
-**Happy learning! 🎓🎵**
+**Note**: This project is for educational purposes and is not affiliated with Spotify or Anthropic.
