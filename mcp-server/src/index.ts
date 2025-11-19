@@ -46,10 +46,10 @@ function getServer() {
     });
 
     server.registerTool(
-        "add",
+        "list_top_tracks",
         {
             title: "Best tracks tools",
-            description: "List top tracks from a spotify artist",
+            description: "Retrieves the top 10 most popular tracks from a Spotify artist. Provide the artist's name and get detailed information including track names, albums, popularity scores, preview URLs, and Spotify links. Also returns artist information like followers, genres, and profile image.",
             inputSchema: { artistName: z.string() },
             outputSchema: {
                 artist: z.object({
