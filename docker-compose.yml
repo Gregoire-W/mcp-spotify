@@ -20,3 +20,10 @@ services:
       - "3000:3000"
     environment:
       - SPOTIFY_API_URL=http://spotify-api:8000
+
+  mcp-client:
+    image: mcp-client:latest
+    container_name: mcp-client-run-1
+    build:
+      context: ./mcp-client
+      dockerfile: Dockerfile.prod

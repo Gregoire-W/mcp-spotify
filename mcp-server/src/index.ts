@@ -1,11 +1,41 @@
+// npx @modelcontextprotocol/inspector http://localhost:3000/mcp
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import express, { type Request, type Response } from 'express';
+import cors from 'cors';
 import { z } from "zod";
 import { listTracksByArtist } from "./clients/spotifyApiClient.js";
 
 const app = express();
 app.use(express.json());
+
+// Configuration CORS pour l'inspecteur MCP
+const corsOptions = {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        // Allow requests with no origin (like mobile apps or Postman)
+        if (!origin) return callback(null, true);
+
+        // Allow all localhost and 127.0.0.1 on any port
+        if (origin.startsWith('http://localhost:') ||
+            origin.startsWith('http://127.0.0.1:') ||
+            origin === 'http://localhost' ||
+            origin === 'http://127.0.0.1') {
+            console.log(`Request accepted from: ${origin}`)
+            return callback(null, true);
+        }
+
+        console.log('Origin not allowed:', origin);
+        callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Mcp-Session-Id', 'mcp-protocol-version', 'accept'],
+    exposedHeaders: ['Mcp-Session-Id', 'X-Request-Id', 'Content-Type'],
+    credentials: false,
+    maxAge: 86400 // Cache preflight for 24 hours
+};
+
+app.use(cors(corsOptions));
 
 function getServer() {
 
@@ -16,10 +46,10 @@ function getServer() {
     });
 
     server.registerTool(
-        "add",
+        "list_top_tracks",
         {
             title: "Best tracks tools",
-            description: "List top tracks from a spotify artist",
+            description: "Retrieves the top 10 most popular tracks from a Spotify artist. Provide the artist's name and get detailed information including track names, albums, popularity scores, preview URLs, and Spotify links. Also returns artist information like followers, genres, and profile image.",
             inputSchema: { artistName: z.string() },
             outputSchema: {
                 artist: z.object({
@@ -57,6 +87,12 @@ function getServer() {
 
 app.post('/mcp', async (req: Request, res: Response) => {
     try {
+        console.log('Received MCP request:', {
+            method: req.method,
+            body: JSON.stringify(req.body).substring(0, 200),
+            headers: req.headers
+        });
+
         const server = getServer();
 
         const transport = new StreamableHTTPServerTransport({
@@ -70,7 +106,10 @@ app.post('/mcp', async (req: Request, res: Response) => {
         });
 
         await server.connect(transport);
+        console.log('Server connected to transport');
+
         await transport.handleRequest(req, res, req.body);
+        console.log('Request handled successfully');
     } catch (error) {
         console.error('Error handling MCP request:', error);
         if (!res.headersSent) {
