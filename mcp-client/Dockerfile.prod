@@ -1,3 +1,5 @@
+# docker exec -it mcp-client-run-1 python client.py
+
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -8,4 +10,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY client.py .
 
-CMD ["python", "client.py"]
+# Keep container running for interactive use
+CMD ["tail", "-f", "/dev/null"]
