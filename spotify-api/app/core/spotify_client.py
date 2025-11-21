@@ -16,6 +16,7 @@ class SpotifyClient():
             assert ValueError("Client secret should be defined as an environment variable")
         self.token = None
         self.expire = None
+        self.api_version = "v1"
 
     def _is_token_valid(self):
         return self.expire is None or self.expire < time.time() 
@@ -47,7 +48,7 @@ class SpotifyClient():
     
     def get(self, endpoint: str, params: Optional[dict] = None) -> dict:
         token = self.get_token()
-        url = f"https://api.spotify.com/{endpoint}"
+        url = f"https://api.spotify.com/{self.api_version}/{endpoint}"
         headers = {"Authorization": f"Bearer {token}"}
         
         try:
