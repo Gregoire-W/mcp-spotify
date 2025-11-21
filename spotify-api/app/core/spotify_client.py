@@ -58,7 +58,22 @@ class SpotifyClient():
             raise HTTPException(
                 status_code=response.status_code if hasattr(response, 'status_code') else 500,
                 detail=f"Erreur lors de l'appel à l'API Spotify: {str(e)}"
-            )        
+            )
+
+    def post(self, endpoint: str, body: Optional[dict] = None) -> dict:
+        token = self.get_token()
+        url = f"https://api.spotify.com/{endpoint}"
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        try:
+            response = requests.post(url, headers=headers, json=body, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            raise HTTPException(
+                status_code=response.status_code if hasattr(response, 'status_code') else 500,
+                detail=f"Erreur lors de l'appel à l'API Spotify: {str(e)}"
+            )       
 
 
 _spotify_client: Optional[SpotifyClient] = None
