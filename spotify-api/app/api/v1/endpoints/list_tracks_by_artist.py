@@ -10,7 +10,12 @@ async def list_tracks_by_artist(
     spotifyClient: SpotifyClient = Depends(get_spotify_client)
 ):
     artist_name = request.artist_name
-    data = spotifyClient.get(endpoint=f"v1/search?q={artist_name}&type=artist&limit=1")
+    params = {
+        "q": artist_name,
+        "type": "artist",
+        "limit": 1
+    }
+    data = spotifyClient.get(endpoint=f"v1/search", params=params)
 
     if (not data["artists"]["items"] or len(data["artists"]["items"]) == 0):
         raise ValueError(f"Artist '{artist_name}' not found")
