@@ -29,3 +29,5 @@ services:
       dockerfile: Dockerfile.prod
     env_file:
       - ./mcp-client/.env
+    ports:
+      - "8080:8080"

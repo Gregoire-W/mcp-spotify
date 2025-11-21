@@ -10,7 +10,7 @@ class MCPClient:
     def __init__(self):
         self.client = genai.Client(api_key=os.getenv("GOOGLE_GENAI_API_KEY"))
 
-    async def process_query(self, query: str, session) -> str:
+    async def _process_query(self, query: str, session) -> str:
 
         messages = [
             types.Content(
@@ -69,9 +69,10 @@ class MCPClient:
         print("-"*50)
         print(final_response.text)
         print("-"*50)
+        
+        return final_response.text
 
-
-    async def run(self, server_path: str="http://mcp-server:3000/mcp"):
+    async def run(self, query: str, server_path: str="http://mcp-server:3000/mcp"):
         print("🚀 Connecting to MCP server...", flush=True)
         async with streamablehttp_client(server_path) as (
             read_stream,
@@ -84,22 +85,11 @@ class MCPClient:
                 # Initialize the connection
                 print("🔧 Initializing session...", flush=True)
                 await session.initialize()
-                
+
                 # List available tools
                 print("📋 Listing available tools...", flush=True)
                 tools = await session.list_tools()
                 print(f"Available tools: {[tool.name for tool in tools.tools]}", flush=True)
 
-                while True:
-                    user_query = input("\n💬 You: ")
-                    if user_query.lower() in ['exit', 'quit']:
-                        break
-
-                    await self.process_query(user_query, session)
-
-async def main():
-    client = MCPClient()
-    await client.run()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+                result = await self._process_query(query, session)
+                return result
