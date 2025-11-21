@@ -5,7 +5,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import { z } from "zod";
-import { listTracksByArtist } from "./clients/spotifyApiClient.js";
+import { getSpotifyApiClient } from "./clients/spotifyApiClient.js";
 
 const app = express();
 app.use(express.json());
@@ -46,42 +46,23 @@ function getServer() {
     });
 
     server.registerTool(
-        "list_top_tracks",
+        "createPlaylist",
         {
-            title: "Best tracks tools",
-            description: "Retrieves the top 10 most popular tracks from a Spotify artist. Provide the artist's name and get detailed information including track names, albums, popularity scores, preview URLs, and Spotify links. Also returns artist information like followers, genres, and profile image.",
-            inputSchema: { artistName: z.string() },
-            outputSchema: {
-                artist: z.object({
-                    id: z.string(),
-                    name: z.string(),
-                    image: z.string(),
-                    followers: z.number(),
-                    genres: z.array(z.string())
-                }),
-                tracks: z.array(
-                    z.object({
-                        id: z.string(),
-                        name: z.string(),
-                        album: z.string(),
-                        albumImage: z.string(),
-                        duration: z.number(),
-                        popularity: z.number(),
-                        previewUrl: z.string().nullable(),  // Peut être null
-                        spotifyUrl: z.string()
-                    })
-                )
-            }
+            title: "Create a new Spotify playlist",
+            description: "Creates a new playlist in the user's Spotify account. Provide a name, optional description, and choose whether it should be public or private. The playlist will be created empty and ready to add tracks.",
+            inputSchema: { playlistName: z.string(), playlistDescription: z.string(), isPublic: z.boolean() },
+            outputSchema: { success: z.boolean() }
         },
-        async ({ artistName }) => {
-            const response = await listTracksByArtist(artistName)
+        async ({ playlistName, playlistDescription, isPublic }) => {
+            const client = getSpotifyApiClient()
+            const response = await client.createPlaylist(playlistName, playlistDescription, isPublic)
             return {
                 content: [{ type: 'text', text: JSON.stringify(response) }],
                 structuredContent: response
             };
         }
-
     )
+
     return server;
 }
 
@@ -92,6 +73,12 @@ app.post('/mcp', async (req: Request, res: Response) => {
             body: JSON.stringify(req.body).substring(0, 200),
             headers: req.headers
         });
+
+        const code = req.header('X-Session-ID');
+        if (code) {
+            const client = getSpotifyApiClient();
+            client.setCode(code);
+        }
 
         const server = getServer();
 
