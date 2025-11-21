@@ -1,4 +1,3 @@
-import asyncio
 import os
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
@@ -44,8 +43,11 @@ class MCPClient:
 
         messages.append(response.candidates[0].content)
         
+        has_function_call = False
         for part in response.candidates[0].content.parts:
             if part.function_call:
+                has_function_call = True
+
                 tool_name = part.function_call.name
                 tool_args = part.function_call.args
 
@@ -57,8 +59,9 @@ class MCPClient:
                 )
 
                 messages.append(types.Content(role="user", parts=[function_response_part]))
-            elif part.text:
-                pass
+
+        if not has_function_call:
+            return response.text
 
         final_response = self.client.models.generate_content(
             model="gemini-2.5-flash",
@@ -72,9 +75,10 @@ class MCPClient:
         
         return final_response.text
 
-    async def run(self, query: str, server_path: str="http://mcp-server:3000/mcp"):
+    async def run(self, query: str, code: str , server_path: str="http://mcp-server:3000/mcp"):
         print("🚀 Connecting to MCP server...", flush=True)
-        async with streamablehttp_client(server_path) as (
+
+        async with streamablehttp_client(server_path, headers={"X-Session-ID": code}) as (
             read_stream,
             write_stream,
             _,
