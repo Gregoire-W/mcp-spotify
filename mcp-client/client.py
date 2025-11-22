@@ -14,7 +14,6 @@ class MCPClient:
         self.messages = []
 
     async def _process_query(self, query: str, session) -> str:
-
         self.messages.append(
             types.Content(
                 role="user", parts=[types.Part(text=query)]
@@ -46,26 +45,31 @@ class MCPClient:
         )
 
         self.messages.append(response.candidates[0].content)
+
+        while True:
+            if any([part.function_call for part in response.candidates[0].content.parts]):
+                response = await self._answer_with_tool(response, session, config)
+            else:
+                return response.text
+            
+    async def _answer_with_tool(self, response, session, config):
+        function_responses = []
         
-        has_function_call = False
         for part in response.candidates[0].content.parts:
             if part.function_call:
-                has_function_call = True
-
                 tool_name = part.function_call.name
                 tool_args = part.function_call.args
 
                 result = await session.call_tool(tool_name, tool_args)
-                
                 function_response_part = types.Part.from_function_response(
                     name=tool_name,
                     response={"result": result},
                 )
-
-                self.messages.append(types.Content(role="user", parts=[function_response_part]))
-
-        if not has_function_call:
-            return response.text
+                function_responses.append(function_response_part)
+        
+        # Ajouter toutes les réponses en un seul message important pour Gemini
+        if function_responses:
+            self.messages.append(types.Content(role="user", parts=function_responses))
 
         final_response = self.client.models.generate_content(
             model="gemini-2.5-flash",
@@ -73,11 +77,7 @@ class MCPClient:
             contents=self.messages,
         )
 
-        print("-"*50)
-        print(final_response.text)
-        print("-"*50)
-        
-        return final_response.text
+        return final_response
 
     async def run(self, query: str, code: str , server_path: str="http://mcp-server:3000/mcp"):
         print("🚀 Connecting to MCP server...", flush=True)
