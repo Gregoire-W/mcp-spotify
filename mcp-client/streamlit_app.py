@@ -14,12 +14,12 @@ st.set_page_config(
 st.title("🎵 Spotify MCP Assistant")
 st.caption("Powered by Google Gemini & Model Context Protocol")
 
+if "client" not in st.session_state:
+    st.session_state.client = MCPClient()
+
 # Initialiser l'historique de chat dans la session
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-if "client" not in st.session_state:
-    st.session_state.client = MCPClient()
 
 # Afficher l'historique des messages
 for message in st.session_state.messages:
@@ -37,7 +37,10 @@ if prompt := st.chat_input("Ask me about Spotify artists..."):
     
     # Simuler une réponse (à remplacer par votre logique MCP)
     with st.chat_message("assistant"):
-        response = asyncio.run(st.session_state.client.run(prompt, st.query_params["code"]))
+        if "code" in st.query_params:
+            response = asyncio.run(st.session_state.client.run(prompt, st.query_params["code"]))
+        else:
+            response = asyncio.run(st.session_state.client.run(prompt, ""))
         st.markdown(response)
     
     # Ajouter la réponse à l'historique
@@ -78,4 +81,5 @@ with st.sidebar:
     
     if st.button("🗑️ Clear Chat", use_container_width=True):
         st.session_state.messages = []
+        st.session_state.client.reset_messages()
         st.rerun()

@@ -1,3 +1,5 @@
+import { type Track, type Tracks } from "../types/track.js";
+
 const BASE_URL = process.env.SPOTIFY_API_URL;
 
 export async function listTracksByArtist(artistName: string) {
@@ -112,6 +114,50 @@ export class SpotifyApiClient {
             });
             return { success: true }
         } catch {
+            return { success: false }
+        }
+
+    }
+
+    public async search(query: string, type: string, limit: number) {
+
+        try {
+            const token = await this.getToken();
+            const headers = { "Authorization": `Bearer ${token}` };
+
+            // Construire l'URL avec les query parameters
+            const params = new URLSearchParams({
+                q: query,
+                type: type,
+                limit: limit.toString()
+            });
+
+            const response = await fetch(`https://api.spotify.com/v1/search?${params}`, {
+                method: "GET",
+                headers: headers
+            });
+
+            if (!response.ok) {
+                console.error("Error while fetching search endpoint");
+                return { success: false }
+            }
+
+            const data = await response.json();
+            const tracks: Tracks = data.tracks
+
+            return {
+                tracks: tracks.items.map((track: Track) => {
+                    return {
+                        uri: track.uri,
+                        name: track.name,
+                        artists: track.artists.map((artist) => artist.name),
+                        album: track.album.name,
+                    }
+                }),
+                success: true
+            }
+
+        } catch (error) {
             return { success: false }
         }
 
