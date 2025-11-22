@@ -56,7 +56,8 @@ export class SpotifyApiClient {
 
     private async refreshToken() {
         if (!this.code) {
-            throw new Error("No authorization code available. Call setCode() first.");
+            console.error("No authorization code available. Call setCode() first.");
+            return { success: false, message: "No authorization code available. You should login with your spotify account first." }
         }
 
         const response = await fetch("https://accounts.spotify.com/api/token", {
@@ -73,36 +74,45 @@ export class SpotifyApiClient {
         })
 
         if (!response.ok) {
-            throw new Error(`Token refresh failed: ${response.statusText}`);
+            console.error(`Token refresh failed: ${response.statusText}`);
+            return { success: false, message: "Token refresh failed" }
         }
 
         const data = await response.json();
         this.token = data.access_token;
         this.expire = Math.floor(Date.now() / 1000) + data.expires_in - 30;
+        return { success: true, message: "Token refreshed successfuly" }
     }
 
     private async getToken() {
 
+        let response: { success: boolean, message: string }
         if (!this.isTokenValid()) {
-            await this.refreshToken();
+            response = await this.refreshToken();
+        } else {
+            response = { success: true, message: "Token already exists and still valid" };
         }
-        return this.token
+        return { token: this.token, success: response.success, message: response.message }
     }
 
     public async createPlaylist(playlistName: string, playlistDesc: string, isPublic: boolean = false) {
         try {
-            const token = await this.getToken()
+            const { token, success, message } = await this.getToken()
+            if (!success) {
+                return { success: false, message: message }
+            }
+
             const headers = { "Authorization": `Bearer ${token}` }
 
             const reponse = await fetch(`${this.baseUrl}/me`, {
                 method: "GET",
                 headers: headers,
             })
-            const data = await reponse.json();
+            const userData = await reponse.json();
 
-            const url = `${this.baseUrl}/users/${data.id}/playlists`;
+            const url = `${this.baseUrl}/users/${userData.id}/playlists`;
 
-            await fetch(url, {
+            const response = await fetch(url, {
                 method: "POST",
                 headers: headers,
                 body: JSON.stringify({
@@ -112,7 +122,9 @@ export class SpotifyApiClient {
                 })
 
             });
-            return { success: true }
+            const playlistData = await response.json()
+
+            return { success: true, playlistId: playlistData.id }
         } catch {
             return { success: false }
         }
@@ -122,7 +134,10 @@ export class SpotifyApiClient {
     public async search(query: string, type: string, limit: number) {
 
         try {
-            const token = await this.getToken();
+            const { token, success, message } = await this.getToken()
+            if (!success) {
+                return { success: false, message: message }
+            }
             const headers = { "Authorization": `Bearer ${token}` };
 
             // Construire l'URL avec les query parameters
@@ -161,6 +176,31 @@ export class SpotifyApiClient {
             return { success: false }
         }
 
+    }
+
+    public async addTrackToPlaylist(playlistId: string, uris: string[]) {
+
+        try {
+            const { token, success, message } = await this.getToken()
+            if (!success) {
+                return { success: false, message: message }
+            }
+            const headers = { "Authorization": `Bearer ${token}` };
+
+            await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify({
+                    uris: uris,
+                    position: 0
+                })
+            })
+
+            return { success: true, message: "Music added with success" }
+
+        } catch (error) {
+            return { success: false, message: "Error while adding music to playlist. Try again later" }
+        }
     }
 
 }
