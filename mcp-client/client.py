@@ -8,14 +8,18 @@ from google import genai
 class MCPClient:
     def __init__(self):
         self.client = genai.Client(api_key=os.getenv("GOOGLE_GENAI_API_KEY"))
+        self.messages = []
+
+    def reset_messages(self):
+        self.messages = []
 
     async def _process_query(self, query: str, session) -> str:
 
-        messages = [
+        self.messages.append(
             types.Content(
                 role="user", parts=[types.Part(text=query)]
             )
-        ]
+        )
 
         mcp_response = await session.list_tools()
 
@@ -37,11 +41,11 @@ class MCPClient:
 
         response = self.client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=messages,
+            contents=self.messages,
             config=config,
         )
 
-        messages.append(response.candidates[0].content)
+        self.messages.append(response.candidates[0].content)
         
         has_function_call = False
         for part in response.candidates[0].content.parts:
@@ -58,7 +62,7 @@ class MCPClient:
                     response={"result": result},
                 )
 
-                messages.append(types.Content(role="user", parts=[function_response_part]))
+                self.messages.append(types.Content(role="user", parts=[function_response_part]))
 
         if not has_function_call:
             return response.text
@@ -66,7 +70,7 @@ class MCPClient:
         final_response = self.client.models.generate_content(
             model="gemini-2.5-flash",
             config=config,
-            contents=messages,
+            contents=self.messages,
         )
 
         print("-"*50)
