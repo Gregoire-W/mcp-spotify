@@ -5,7 +5,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import { z } from "zod";
-import { listTracksByArtist } from "./clients/spotifyApiClient.js";
+import { getSpotifyApiClient } from "./clients/spotifyApiClient.js";
 
 const app = express();
 app.use(express.json());
@@ -21,11 +21,11 @@ const corsOptions = {
             origin.startsWith('http://127.0.0.1:') ||
             origin === 'http://localhost' ||
             origin === 'http://127.0.0.1') {
-            console.log(`Request accepted from: ${origin}`)
+            // console.log(`Request accepted from: ${origin}`)
             return callback(null, true);
         }
 
-        console.log('Origin not allowed:', origin);
+        // console.log('Origin not allowed:', origin);
         callback(new Error('Not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'OPTIONS'],
@@ -46,52 +46,85 @@ function getServer() {
     });
 
     server.registerTool(
-        "list_top_tracks",
+        "createPlaylist",
         {
-            title: "Best tracks tools",
-            description: "Retrieves the top 10 most popular tracks from a Spotify artist. Provide the artist's name and get detailed information including track names, albums, popularity scores, preview URLs, and Spotify links. Also returns artist information like followers, genres, and profile image.",
-            inputSchema: { artistName: z.string() },
-            outputSchema: {
-                artist: z.object({
-                    id: z.string(),
-                    name: z.string(),
-                    image: z.string(),
-                    followers: z.number(),
-                    genres: z.array(z.string())
-                }),
-                tracks: z.array(
-                    z.object({
-                        id: z.string(),
-                        name: z.string(),
-                        album: z.string(),
-                        albumImage: z.string(),
-                        duration: z.number(),
-                        popularity: z.number(),
-                        previewUrl: z.string().nullable(),  // Peut être null
-                        spotifyUrl: z.string()
-                    })
-                )
-            }
+            title: "Create a new Spotify playlist",
+            description: "Creates a new playlist in the user's Spotify account. Provide a name, optional description, and choose whether it should be public or private. The playlist will be created empty and ready to add tracks. Returns the playlist ID for future manipulation.",
+            inputSchema: { playlistName: z.string(), playlistDescription: z.string(), isPublic: z.boolean() },
+            outputSchema: { success: z.boolean(), playlistId: z.string().optional(), message: z.string().optional() }
         },
-        async ({ artistName }) => {
-            const response = await listTracksByArtist(artistName)
+        async ({ playlistName, playlistDescription, isPublic }) => {
+            const client = getSpotifyApiClient()
+            const response = await client.createPlaylist(playlistName, playlistDescription, isPublic)
             return {
                 content: [{ type: 'text', text: JSON.stringify(response) }],
                 structuredContent: response
             };
         }
-
     )
+
+    server.registerTool(
+        "searchTracks",
+        {
+            title: "Search tracks by name",
+            description: "Search for Spotify tracks by name and get their URIs for playlist manipulation. Returns  3 tracks with details including URI, name, artists, and album. Use %20 for spaces in the query (e.g., 'shape%20of%20you').",
+            inputSchema: { query: z.string() },
+            outputSchema: {
+                tracks: z.array(z.object({
+                    uri: z.string(),
+                    name: z.string(),
+                    artists: z.array(z.string()),
+                    album: z.string(),
+                })).optional(),
+                success: z.boolean(),
+                message: z.string().optional(),
+            }
+        },
+        async ({ query }) => {
+            const client = getSpotifyApiClient()
+            const response = await client.search(query, "track", 3);
+            return {
+                content: [{ type: 'text', text: JSON.stringify(response) }],
+                structuredContent: response
+            };
+        }
+    )
+
+    server.registerTool(
+        "addTrackToPlaylist",
+        {
+            title: "Add tracks to a Spotify playlist",
+            description: "Adds tracks to an existing Spotify playlist. Provide the playlist ID (from createPlaylist) and an array of track URIs (from searchTracks). Can add up to 100 tracks in a single call. Returns success status and confirmation message.",
+            inputSchema: { playlistId: z.string(), uris: z.array(z.string()) },
+            outputSchema: { success: z.boolean(), message: z.string() },
+        },
+        async ({ playlistId, uris }) => {
+            const client = getSpotifyApiClient()
+            const response = await client.addTrackToPlaylist(playlistId, uris);
+
+            return {
+                content: [{ type: 'text', text: JSON.stringify(response) }],
+                structuredContent: response
+            }
+        }
+    )
+
     return server;
 }
 
 app.post('/mcp', async (req: Request, res: Response) => {
     try {
-        console.log('Received MCP request:', {
-            method: req.method,
-            body: JSON.stringify(req.body).substring(0, 200),
-            headers: req.headers
-        });
+        // console.log('Received MCP request:', {
+        //     method: req.method,
+        //     body: JSON.stringify(req.body).substring(0, 200),
+        //     headers: req.headers
+        // });
+
+        const code = req.header('X-Session-ID');
+        if (code) {
+            const client = getSpotifyApiClient();
+            client.setCode(code);
+        }
 
         const server = getServer();
 
@@ -100,18 +133,18 @@ app.post('/mcp', async (req: Request, res: Response) => {
         });
 
         res.on('close', () => {
-            console.log("Request close");
+            // console.log("Request close");
             transport.close();
             server.close();
         });
 
         await server.connect(transport);
-        console.log('Server connected to transport');
+        // console.log('Server connected to transport');
 
         await transport.handleRequest(req, res, req.body);
-        console.log('Request handled successfully');
+        // console.log('Request handled successfully');
     } catch (error) {
-        console.error('Error handling MCP request:', error);
+        // console.error('Error handling MCP request:', error);
         if (!res.headersSent) {
             res.status(500).json({
                 jsonrpc: '2.0',
@@ -127,8 +160,8 @@ app.post('/mcp', async (req: Request, res: Response) => {
 
 const port = parseInt(process.env.PORT || '3000');
 app.listen(port, () => {
-    console.log(`MCP Server running on http://localhost:${port}/mcp`);
+    // console.log(`MCP Server running on http://localhost:${port}/mcp`);
 }).on('error', error => {
-    console.error('Server error:', error);
+    // console.error('Server error:', error);
     process.exit(1);
 });
