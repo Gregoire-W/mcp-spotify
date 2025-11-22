@@ -1,175 +1,402 @@
-# 🎵 Spotify MCP Server
+<div align="center">
 
-A Model Context Protocol (MCP) implementation for Spotify, built from scratch to demonstrate how MCP servers work in practice. Create playlists, search for music, and explore Spotify's features through a standardized AI integration layer.
+# 🎵 Spotify MCP - Model Context Protocol Implementation
 
-> **Learning Project**: This project was created to understand MCP internals by building a real-world implementation with Spotify integration.
+[![MCP](https://img.shields.io/badge/MCP-1.0-blue.svg)](https://github.com/modelcontextprotocol)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
+[![Python](https://img.shields.io/badge/Python-3.11+-green.svg)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-UI-red.svg)](https://streamlit.io/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 📺 Demo
+**Create entire Spotify playlists with a single prompt or split large playlists by music genre using AI.**
 
-_[Demo video/screenshot coming soon]_
+[Features](#-features) • [Demo](#-demo) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Documentation](#-documentation)
 
-## 🤔 What is MCP?
+</div>
 
-The **Model Context Protocol (MCP)** is an open standard that enables AI models to securely interact with external tools and data sources. Think of it as a universal adapter that lets AI assistants (like Claude, ChatGPT, or Gemini) use your applications and services.
+---
 
-### How it works
+## 📖 About The Project
 
-```
-┌─────────────┐         ┌─────────────┐         ┌──────────────┐
-│             │  MCP    │             │  HTTP   │              │
-│  AI Model   │ ◄─────► │ MCP Server  │ ◄─────► │ Spotify API  │
-│  (Client)   │         │ (TypeScript)│         │   (Python)   │
-│             │         │             │         │              │
-└─────────────┘         └─────────────┘         └──────────────┘
-```
+**Spotify MCP** is a practical implementation of the **Model Context Protocol (MCP)** that showcases how AI assistants can interact with external services in a standardized way. This project uses Spotify as a real-world example to demonstrate MCP's capabilities.
 
-1. **AI Model** sends requests to the MCP Server using the MCP protocol
-2. **MCP Server** processes requests and communicates with the Spotify API wrapper
-3. **Spotify API** handles authentication and interactions with Spotify's services
-4. Results flow back through the chain to the AI model
+### What is Model Context Protocol?
 
-## 🏗️ Architecture
-
-This project consists of three main components running in Docker containers:
-
-### 🐍 Spotify API (`spotify-api/`)
-A FastAPI wrapper around Spotify's Web API that handles:
-- OAuth authentication with Spotify
-- Rate limiting and error handling
-- Clean REST endpoints for the MCP server
-
-### 🔧 MCP Server (`mcp-server/`)
-A TypeScript implementation of the MCP protocol that:
-- Exposes Spotify features as MCP tools
-- Translates between MCP protocol and HTTP requests
-- Manages sessions and handles CORS for browser-based clients
-
-### 🤖 MCP Client (`mcp-client/`)
-A Python client demonstrating MCP usage:
-- Connects to the MCP server via HTTP
-- Lists available tools
-- Executes tool calls and displays results
-
-### Communication Flow
+The Model Context Protocol is an open standard that enables AI models to securely connect to external data sources and tools. Instead of AI models having hardcoded integrations, MCP provides a universal way for them to interact with any service.
 
 ```
-MCP Client ──[MCP Protocol]──► MCP Server ──[HTTP]──► Spotify API ──[OAuth]──► Spotify
+┌─────────────────┐
+│   AI Model      │
+│   (Gemini)      │
+└────────┬────────┘
+         │
+         │ MCP Protocol
+         │
+┌────────▼────────┐
+│   MCP Server    │◄──── Standardized Interface
+│   (Spotify)     │
+└────────┬────────┘
+         │
+         │ REST API
+         │
+┌────────▼────────┐
+│  Spotify API    │
+└─────────────────┘
 ```
 
-## 🚀 Installation
+**Why this project matters:**
+- 🎓 **Educational**: Learn MCP by building something practical
+- 🔌 **Reusable**: Server architecture can be adapted for other APIs
+- 🚀 **Production-ready**: Docker-based deployment with TypeScript & Python
+- 💡 **Real-world use case**: Solve actual Spotify playlist management challenges
+
+---
+
+## ✨ Features
+
+### 🎼 Playlist Creation
+- **Natural Language Playlists**: Generate entire playlists from a single prompt
+  - *"Create a workout playlist with 20 high-energy songs"*
+  - *"Make me a chill jazz playlist for studying"*
+  
+### 🎯 Smart Track Search
+- Search Spotify's catalog using conversational language
+- Get track details including URI, artists, and album info
+
+### 📝 Playlist Management
+- Create public or private playlists
+- Add multiple tracks in bulk operations
+- Full control over playlist metadata
+
+### 🎨 Genre-Based Organization
+- **Coming Soon**: Split large playlists by music genre
+- Organize your library intelligently
+
+---
+
+## 🎬 Demo
+
+<div align="center">
+
+### Creating a Playlist in Seconds
+
+![Demo GIF](assets/demo.gif)
+
+*A complete playlist created with natural language in one prompt*
+
+</div>
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
-- A Spotify Developer account
-- An AI API key (Google AI, OpenAI, or Anthropic)
+Before you begin, make sure you have:
 
-### 1. Spotify Developer Setup
+1. **Docker & Docker Compose** installed ([Get Docker](https://docs.docker.com/get-docker/))
+2. **Spotify Developer Account** - [Create App Tutorial](#spotify-setup)
+3. **Google Gemini API Key** - [Get Free Key](https://ai.google.dev/)
+4. **Active Spotify Account** for testing
 
-1. Go to [Spotify for Developers](https://developer.spotify.com/dashboard)
-2. Create a new app
-3. Note your **Client ID** and **Client Secret**
-4. Add `http://localhost:8000/callback` to your app's Redirect URIs
+### Spotify Setup
 
-### 2. AI API Key
+1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Click **"Create an App"**
+3. Fill in the app details:
+   - **App Name**: MCP Spotify (or any name)
+   - **App Description**: Model Context Protocol implementation
+   - **Redirect URI**: `http://localhost:8080`
+4. Save and copy your **Client ID** and **Client Secret**
 
-Choose one of the following providers:
-
-- **Google AI Studio** (Free): [Get API Key](https://aistudio.google.com/app/apikey)
-- **OpenAI**: [Get API Key](https://platform.openai.com/api-keys)
-- **Anthropic**: [Get API Key](https://console.anthropic.com/)
-
-### 3. Environment Configuration
-
-Create two environment files in the project root:
-
-#### `spotify-api/app/.env`
-```env
-SPOTIFY_CLIENT_ID=your_spotify_client_id
-SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-SPOTIFY_REDIRECT_URI=http://localhost:8000/callback
-```
-
-#### `mcp-client/.env` (optional, for AI integration)
-```env
-# Choose one provider
-GOOGLE_AI_API_KEY=your_google_api_key
-# OPENAI_API_KEY=your_openai_api_key
-# ANTHROPIC_API_KEY=your_anthropic_api_key
-```
-
-## 🎮 Usage
-
-### Start the Project
+### Installation
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/Gregoire-W/mcp-spotify.git
 cd mcp-spotify
 
-# Start all services
+# 2. Configure MCP Server environment
+cd mcp-server
+echo "SPOTIFY_CLIENT_ID=your_client_id_here" > .env
+echo "SPOTIFY_CLIENT_SECRET=your_client_secret_here" >> .env
+cd ..
+
+# 3. Configure MCP Client environment
+cd mcp-client
+echo "GOOGLE_GENAI_API_KEY=your_gemini_api_key_here" > .env
+cd ..
+
+# 4. Launch with Docker Compose
 docker compose up --build
+
+# 5. Open your browser
+# Navigate to: http://localhost:8080
 ```
 
-That's it! The services will be available at:
-- **Spotify API**: http://localhost:8000
-- **MCP Server**: http://localhost:3000/mcp
-- **MCP Client**: Runs once and exits (check logs with `docker compose logs mcp-client`)
+### First Run
 
-### Test with MCP Inspector
+1. Open `http://localhost:8080` in your browser
+2. The Streamlit interface will load
+3. You'll be prompted to authenticate with Spotify
+4. Start chatting! Try: *"Create a playlist called 'Road Trip' with 15 upbeat songs"*
 
-You can also test the server using the official MCP Inspector:
+---
 
+## 🏗️ Architecture
+
+### Technology Stack
+
+<div align="center">
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **MCP Server** | TypeScript + Express | Implements MCP protocol & Spotify integration |
+| **MCP Client** | Python | Handles MCP client communication |
+| **AI Model** | Google Gemini 2.5 Flash | Natural language processing & tool calling |
+| **UI** | Streamlit | Simple, effective chat interface |
+| **Deployment** | Docker Compose | Containerized multi-service architecture |
+
+</div>
+
+### System Architecture
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                      User Interface                       │
+│                   Streamlit (Port 8080)                   │
+└───────────────────────────┬──────────────────────────────┘
+                            │
+                    ┌───────▼────────┐
+                    │  MCP Client    │
+                    │   (Python)     │
+                    │                │
+                    │  • Session     │
+                    │  • Gemini API  │
+                    └───────┬────────┘
+                            │ MCP Protocol
+                            │ (HTTP)
+                    ┌───────▼────────┐
+                    │  MCP Server    │
+                    │  (TypeScript)  │
+                    │                │
+                    │  Tools:        │
+                    │  • createPlaylist
+                    │  • searchTracks
+                    │  • addTrack    │
+                    └───────┬────────┘
+                            │ OAuth 2.0
+                            │ REST API
+                    ┌───────▼────────┐
+                    │  Spotify API   │
+                    └────────────────┘
+```
+
+### MCP Tools Implementation
+
+The server exposes three main tools through the MCP protocol:
+
+#### 1. `createPlaylist`
+```typescript
+Input: {
+  playlistName: string
+  playlistDescription: string
+  isPublic: boolean
+}
+Output: {
+  success: boolean
+  playlistId: string
+  message: string
+}
+```
+
+#### 2. `searchTracks`
+```typescript
+Input: {
+  query: string
+}
+Output: {
+  tracks: [{
+    uri: string
+    name: string
+    artists: string[]
+    album: string
+  }]
+  success: boolean
+}
+```
+
+#### 3. `addTrackToPlaylist`
+```typescript
+Input: {
+  playlistId: string
+  uris: string[]
+}
+Output: {
+  success: boolean
+  message: string
+}
+```
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+
+#### MCP Server (`mcp-server/.env`)
+```env
+SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+PORT=3000
+```
+
+#### MCP Client (`mcp-client/.env`)
+```env
+GOOGLE_GENAI_API_KEY=your_gemini_api_key
+```
+
+### Upgrading AI Power
+
+The project uses **Gemini 2.5 Flash** (free tier) by default. For better performance:
+
+1. Upgrade to **Gemini 2.5 Pro** in `mcp-client/client.py`:
+```python
+response = self.client.models.generate_content(
+    model="gemini-2.5-pro",  # Changed from gemini-2.5-flash
+    contents=self.messages,
+    config=config,
+)
+```
+
+2. Other compatible models:
+   - `gemini-2.5-pro`: Best quality, slower
+   - `gemini-2.5-flash`: Balanced (default)
+   - `gemini-2.0-flash-exp`: Fastest, experimental
+
+---
+
+## 📚 Documentation
+
+### Project Structure
+
+```
+mcp-spotify/
+├── mcp-server/              # TypeScript MCP Server
+│   ├── src/
+│   │   ├── index.ts         # Server entry point & tool registration
+│   │   ├── clients/
+│   │   │   └── spotifyApiClient.ts  # Spotify API wrapper
+│   │   └── types/
+│   │       └── track.ts     # TypeScript type definitions
+│   ├── Dockerfile.prod
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── mcp-client/              # Python MCP Client
+│   ├── client.py            # MCP client implementation
+│   ├── streamlit_app.py     # UI interface
+│   ├── requirements.txt
+│   └── Dockerfile.prod
+│
+└── docker-compose.yml       # Multi-container orchestration
+```
+
+### Development
+
+#### Running Locally (without Docker)
+
+**Server:**
+```bash
+cd mcp-server
+npm install
+npm run build
+node build/index.js
+```
+
+**Client:**
+```bash
+cd mcp-client
+pip install -r requirements.txt
+streamlit run streamlit_app.py --server.port 8080
+```
+
+#### Testing MCP Server
+
+Use the MCP Inspector to test your server:
 ```bash
 npx @modelcontextprotocol/inspector http://localhost:3000/mcp
 ```
 
-### Stop the Project
-
-```bash
-docker compose down
-```
-
-## 🛠️ Technology Stack
-
-- **MCP Server**: TypeScript, Express, [@modelcontextprotocol/sdk](https://www.npmjs.com/package/@modelcontextprotocol/sdk)
-- **Spotify API**: Python, FastAPI, [Spotipy](https://spotipy.readthedocs.io/)
-- **MCP Client**: Python, [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
-- **Containerization**: Docker, Docker Compose
-
-## 📚 Documentation & Resources
-
-### Official Documentation
-- [Model Context Protocol Specification](https://modelcontextprotocol.io/)
-- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
-- [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
-- [Spotify Web API](https://developer.spotify.com/documentation/web-api)
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-
-### Learning Resources
-- [Anthropic's MCP Announcement](https://www.anthropic.com/news/model-context-protocol)
-- [Building MCP Servers - A Guide](https://modelcontextprotocol.io/docs/building-servers)
+---
 
 ## 🤝 Contributing
 
-This is a learning project, but contributions are welcome! Feel free to:
+Contributions are what make the open-source community amazing! Any contributions you make are **greatly appreciated**.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Anthropic](https://www.anthropic.com/) for creating the Model Context Protocol
-- [Spotify](https://www.spotify.com/) for their comprehensive Web API
-- The open-source community for the amazing tools and libraries
 
 ---
 
-**Note**: This project is for educational purposes and is not affiliated with Spotify or Anthropic.
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Port Already in Use**
+```bash
+# Change ports in docker-compose.yml
+ports:
+  - "8081:8080"  # Use 8081 instead of 8080
+```
+
+**Spotify Authentication Failed**
+- Verify your Client ID and Client Secret in `.env`
+- Ensure Redirect URI is set to `http://localhost:8080` in Spotify Dashboard
+- Check that you've authorized the app during first run
+
+**Docker Build Fails**
+```bash
+# Clean Docker cache and rebuild
+docker compose down
+docker system prune -a
+docker compose up --build
+```
+
+---
+
+## 📝 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+## 🙏 Acknowledgments
+
+- [Model Context Protocol](https://modelcontextprotocol.io/) - The MCP specification and SDK
+- [Anthropic](https://www.anthropic.com/) - For creating and maintaining MCP
+- [Spotify Web API](https://developer.spotify.com/documentation/web-api) - Music data and controls
+- [Google Gemini](https://ai.google.dev/) - AI model with function calling
+- [Streamlit](https://streamlit.io/) - Rapid UI prototyping
+
+---
+
+## 📧 Contact
+
+Grégoire W. - [@Gregoire-W](https://github.com/Gregoire-W)
+
+Project Link: [https://github.com/Gregoire-W/mcp-spotify](https://github.com/Gregoire-W/mcp-spotify)
+
+---
+
+<div align="center">
+
+**⭐ Star this repo if you find it helpful!**
+
+Made with ❤️ and lots of ☕
+
+</div>
