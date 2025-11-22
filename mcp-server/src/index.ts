@@ -63,6 +63,32 @@ function getServer() {
         }
     )
 
+    server.registerTool(
+        "searchTracks",
+        {
+            title: "Search tracks by name",
+            description: "Search for Spotify tracks by name and get their URIs for playlist manipulation. Returns  3 tracks with details including URI, name, artists, and album. Use %20 for spaces in the query (e.g., 'shape%20of%20you').",
+            inputSchema: { query: z.string() },
+            outputSchema: {
+                tracks: z.array(z.object({
+                    uri: z.string(),
+                    name: z.string(),
+                    artists: z.array(z.string()),
+                    album: z.string(),
+                })).optional(),
+                success: z.boolean(),
+            }
+        },
+        async ({ query }) => {
+            const client = getSpotifyApiClient()
+            const response = await client.search(query, "track", 3);
+            return {
+                content: [{ type: 'text', text: JSON.stringify(response) }],
+                structuredContent: response
+            };
+        }
+    )
+
     return server;
 }
 
