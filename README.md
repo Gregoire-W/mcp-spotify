@@ -81,7 +81,7 @@ The Model Context Protocol is an open standard that enables AI models to securel
 
 ### Creating a Playlist in Seconds
 
-![Demo GIF](assets/demo.gif)
+![Demo GIF](ressources/demo.gif)
 
 *A complete playlist created with natural language in one prompt*
 
@@ -126,6 +126,7 @@ cd ..
 # 3. Configure MCP Client environment
 cd mcp-client
 echo "GOOGLE_GENAI_API_KEY=your_gemini_api_key_here" > .env
+echo "SPOTIFY_CLIENT_ID=your_client_id_here" >> .env
 cd ..
 
 # 4. Launch with Docker Compose
@@ -139,8 +140,8 @@ docker compose up --build
 
 1. Open `http://localhost:8080` in your browser
 2. The Streamlit interface will load
-3. You'll be prompted to authenticate with Spotify
-4. Start chatting! Try: *"Create a playlist called 'Road Trip' with 15 upbeat songs"*
+3. Click the **"Connect to Spotify"** button in the sidebar to authenticate
+4. Once connected, start chatting! Try: *"Create a playlist called 'Road Trip' with 15 upbeat songs"*
 
 ---
 
@@ -249,12 +250,12 @@ Output: {
 ```env
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-PORT=3000
 ```
 
 #### MCP Client (`mcp-client/.env`)
 ```env
 GOOGLE_GENAI_API_KEY=your_gemini_api_key
+SPOTIFY_CLIENT_ID=your_spotify_client_id
 ```
 
 ### Upgrading AI Power
