@@ -49,9 +49,9 @@ function getServer() {
         "createPlaylist",
         {
             title: "Create a new Spotify playlist",
-            description: "Creates a new playlist in the user's Spotify account. Provide a name, optional description, and choose whether it should be public or private. The playlist will be created empty and ready to add tracks. Returns the playlist ID for future manipulation.",
+            description: "Creates a new playlist in the user's Spotify account. Provide a name, optional description, and choose whether it should be public or private. The playlist will be created empty and ready to add tracks. Returns the playlist ID and url for future manipulation.",
             inputSchema: { playlistName: z.string(), playlistDescription: z.string(), isPublic: z.boolean() },
-            outputSchema: { success: z.boolean(), playlistId: z.string().optional(), message: z.string().optional() }
+            outputSchema: { success: z.boolean(), playlistId: z.string().optional(), url: z.string().optional(), message: z.string().optional() }
         },
         async ({ playlistName, playlistDescription, isPublic }) => {
             const client = getSpotifyApiClient()

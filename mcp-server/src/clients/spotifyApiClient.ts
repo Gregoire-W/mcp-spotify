@@ -124,7 +124,7 @@ export class SpotifyApiClient {
             });
             const playlistData = await response.json()
 
-            return { success: true, playlistId: playlistData.id }
+            return { success: true, playlistId: playlistData.id, url: playlistData.external_urls.spotify }
         } catch {
             return { success: false }
         }
